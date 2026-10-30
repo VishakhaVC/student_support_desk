@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Support Requests · Student Support AI{% endblock %}
+{% block page_title %}Support Requests{% endblock %}
+{% block page_sub %}Review, respond to and resolve student concerns.{% endblock %}
+{% block content %}
+<div class="chips" style="margin-bottom:12px">
+  <a class="chip {{ 'on' if not status }}" href="{{ url_for('admin.tickets_page') }}">All <em>{{ counts.total }}</em></a>
+  <a class="chip {{ 'on' if status == 'active' }}" href="{{ url_for('admin.tickets_page', status='active') }}">Needs action <em>{{ counts.open }}</em></a>
+  {% for s in statuses %}<a class="chip {{ 'on' if status == s }}" href="{{ url_for('admin.tickets_page', status=s) }}">{{ s }} <em>{{ counts.by_status.get(s, 0) }}</em></a>{% endfor %}
+</div>
+<form class="toolbar" method="get">
+  <input type="hidden" name="status" value="{{ status }}">
+  <div class="search grow">{{ ic('search') }}<input type="search" name="q" value="{{ q }}" placeholder="Search reference, subject or student ID" data-table-filter="#tk" aria-label="Search requests"></div>
+  <select name="category" aria-label="Category" onchange="this.form.submit()" style="width:auto"><option value="">All categories</option>{% for c in categories %}<option value="{{ c }}" {{ 'selected' if category == c }}>{{ c.replace('_',' ')|capitalize }}</option>{% endfor %}</select>
+  <button class="btn secondary" type="submit">Apply</button>
+</form>
+{% if rows %}
+<div class="tablewrap"><table id="tk"><thead><tr><th>Reference</th><th>Student</th><th>Subject</th><th>Category</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>
+{% for t in rows %}<tr class="clickable" data-href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}" data-search="{{ (t.ticket_ref ~ ' ' ~ t.subject ~ ' ' ~ t.student_id ~ ' ' ~ names.get(t.student_id, ''))|lower }}">
+  <td><a href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}"><b>{{ t.ticket_ref }}</b></a></td>
+  <td>{{ names.get(t.student_id, t.student_id) }}<div class="note">{{ t.student_id }}</div></td>
+  <td>{{ t.subject }}{% if t.source == 'assistant' %} <span class="badge b-plain b-info">via assistant</span>{% endif %}</td>
+  <td>{{ t.category.replace('_',' ')|capitalize }}</td><td>{{ badge(t.status) }}</td><td class="num nowrap">{{ t.updated_at.strftime('%d %b %H:%M') }}</td>
+  <td class="nowrap">{% if t.status == 'Open' %}<form method="post" action="{{ url_for('admin.ticket_update', ref=t.ticket_ref) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="Under Review"><input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}"><button class="btn small" type="submit">Start review</button></form>{% else %}<a class="btn secondary small" href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}">Open</a>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div><div id="tk-none" class="empty" hidden>No requests match your search.</div>
+{% else %}<div class="card">{{ empty('inbox', 'No support requests', 'Nothing matches the current filters.') }}</div>{% endif %}
+{% endblock %}

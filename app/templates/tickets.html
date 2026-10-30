@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Support Requests · Student Support AI{% endblock %}
+{% block page_title %}Support Requests{% endblock %}
+{% block page_sub %}Raise a concern and follow it until it is resolved.{% endblock %}
+{% block page_actions %}<button class="btn" type="button" id="new-ticket">{{ ic('plus') }}New request</button>{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div class="chips">
+    <a class="chip {{ 'on' if not status }}" href="{{ url_for('main.tickets_page') }}">All <em>{{ counts.total }}</em></a>
+    <a class="chip {{ 'on' if status == 'active' }}" href="{{ url_for('main.tickets_page', status='active') }}">Open <em>{{ counts.open }}</em></a>
+    <a class="chip {{ 'on' if status == 'Resolved' }}" href="{{ url_for('main.tickets_page', status='Resolved') }}">Resolved <em>{{ counts.resolved }}</em></a>
+    <a class="chip {{ 'on' if status == 'Rejected' }}" href="{{ url_for('main.tickets_page', status='Rejected') }}">Rejected <em>{{ counts.rejected }}</em></a>
+  </div>
+  <div class="search grow">{{ ic('search') }}<input type="search" placeholder="Search by reference or subject" data-table-filter="#tk" aria-label="Search requests"></div>
+</div>
+{% if tickets %}
+<div class="tablewrap"><table id="tk"><thead><tr><th>Reference</th><th>Subject</th><th>Category</th><th>Status</th><th>Updated</th></tr></thead><tbody>
+{% for t in tickets %}
+<tr class="clickable" data-href="{{ url_for('main.ticket_detail', ref=t.ticket_ref) }}" data-search="{{ (t.ticket_ref ~ ' ' ~ t.subject ~ ' ' ~ t.category)|lower }}">
+  <td><a href="{{ url_for('main.ticket_detail', ref=t.ticket_ref) }}"><b>{{ t.ticket_ref }}</b></a></td>
+  <td>{{ t.subject }}{% if t.last_response %}<div class="note">Reply: {{ t.last_response[:80] }}{{ '…' if t.last_response|length > 80 }}</div>{% endif %}</td>
+  <td>{{ t.category.replace('_', ' ')|capitalize }}</td><td>{{ badge(t.status) }}</td><td class="num nowrap">{{ t.updated_at }}</td></tr>{% endfor %}
+</tbody></table></div>
+<div id="tk-none" class="empty" hidden>No requests match your search.</div>
+{% else %}<div class="card">{{ empty('inbox', 'No requests here', 'Use “New request” to raise a concern.') }}</div>{% endif %}
+
+<dialog id="ticket-dialog"><form method="post" class="dlg">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>New support request</h2><p>Tell us what you need help with.</p>
+  <label for="category">Category</label>
+  <select id="category" name="category">{% for c in categories %}<option value="{{ c }}">{{ {'contact_change':'Request profile change','account_access':'Account and password help'}.get(c, c.replace('_',' ')|capitalize) }}</option>{% endfor %}</select>
+  <div id="contact-fields" hidden>
+    <label for="field">Detail to change</label><select id="field" name="field"><option value="full_name">Registered full name</option><option value="email">Registered email</option><option value="phone">Registered phone</option></select>
+    <label for="new_value">New value</label><input type="text" id="new_value" name="new_value" maxlength="120">
+    <p class="note" style="margin-top:6px">Protected profile details change only after staff approval.</p>
+  </div>
+  <div id="free-fields">
+    <label for="subject">Subject</label><input type="text" id="subject" name="subject" maxlength="120">
+    <label for="description">Description</label><textarea id="description" name="description" maxlength="1000"></textarea>
+  </div>
+  <div class="dlg-actions"><button class="btn secondary" type="button" id="ticket-cancel">Cancel</button><button class="btn" type="submit">Submit request</button></div>
+</form></dialog>
+{% endblock %}
+{% block scripts %}<script>
+(function(){
+  const d=document.getElementById('ticket-dialog'), cat=document.getElementById('category');
+  const sync=()=>{const c=cat.value==='contact_change';document.getElementById('contact-fields').hidden=!c;
+    document.getElementById('subject').required=!c;document.getElementById('description').required=!c;
+    document.getElementById('subject').closest('#free-fields').hidden=c;};
+  cat.addEventListener('change',sync);sync();
+  document.getElementById('new-ticket').addEventListener('click',()=>d.showModal());
+  document.getElementById('ticket-cancel').addEventListener('click',()=>d.close());
+})();
+</script>{% endblock %}

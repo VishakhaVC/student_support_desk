@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Approvals · Student Support AI{% endblock %}
+{% block page_title %}Approvals{% endblock %}
+{% block page_sub %}Sensitive changes requested by students. Nothing is applied until you approve.{% endblock %}
+{% block content %}
+<div class="approval-explainer"><span class="step-number">01</span><span>Student requests a protected change</span><span class="step-arrow">→</span><span class="step-number">02</span><span>Administrator reviews</span><span class="step-arrow">→</span><span class="step-number">03</span><span>Approved change updates the student record</span></div>
+<div class="toolbar">
+  <div class="chips">
+    <a class="chip {{ 'on' if status == 'pending' }}" href="{{ url_for('admin.approvals_page', status='pending') }}">Pending <em>{{ counts.pending }}</em></a>
+    <a class="chip {{ 'on' if status == 'approved' }}" href="{{ url_for('admin.approvals_page', status='approved') }}">Approved <em>{{ counts.approved }}</em></a>
+    <a class="chip {{ 'on' if status == 'rejected' }}" href="{{ url_for('admin.approvals_page', status='rejected') }}">Rejected <em>{{ counts.rejected }}</em></a>
+    <a class="chip {{ 'on' if status not in ('pending','approved','rejected') }}" href="{{ url_for('admin.approvals_page', status='all') }}">All</a>
+  </div>
+  <div class="search grow">{{ ic('search') }}<input type="search" placeholder="Search reference or student" data-table-filter="#ap" aria-label="Search approvals"></div>
+</div>
+{% if rows %}
+<div class="tablewrap"><table id="ap"><thead><tr><th>Reference</th><th>Student</th><th>Requested change</th><th>Requested</th><th>Status</th><th>Decision</th></tr></thead><tbody>
+{% for a in rows %}<tr data-search="{{ (a.approval_ref ~ ' ' ~ a.student_id ~ ' ' ~ names.get(a.student_id, '') ~ ' ' ~ a.field)|lower }}">
+  <td><b>{{ a.approval_ref }}</b>{% if a.ticket_id and ticket_refs.get(a.ticket_id) %}<div class="note"><a href="{{ url_for('admin.ticket_detail', ref=ticket_refs[a.ticket_id]) }}">Linked {{ ticket_refs[a.ticket_id] }}</a></div>{% endif %}</td><td>{{ names.get(a.student_id, a.student_id) }}<div class="note"><a href="{{ url_for('admin.student_detail', student_id=a.student_id) }}">{{ a.student_id }}</a></div></td>
+  <td>Registered {{ a.field.replace('_', ' ') }}<div class="note">to <code>{{ a.new_value }}</code></div></td><td class="num nowrap">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+  <td class="status-cell">{{ badge(a.status) }}</td>
+  <td class="action-cell">{% if a.status == 'pending' %}<div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn small" type="button" data-ajax-decision="approve" data-id="{{ a.id }}" data-ref="{{ a.approval_ref }}">Approve</button>
+      <button class="btn danger small" type="button" data-ajax-decision="reject" data-id="{{ a.id }}" data-ref="{{ a.approval_ref }}">Reject</button></div>
+    {% else %}<span class="note">{{ a.execution_result or '' }}{% if a.decision_note %}<br>“{{ a.decision_note }}”{% endif %}</span>{% endif %}</td></tr>{% endfor %}
+</tbody></table></div><div id="ap-none" class="empty" hidden>No approvals match your search.</div>
+{% else %}<div class="card">{{ empty('check', 'No approval requests here', 'This list only contains structured profile-change requests (name, email or phone). Ordinary student concerns appear under Support Requests.') }}</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic %}
+{% block title %}Activity Logs · Student Support AI{% endblock %}
+{% block page_title %}Activity Logs{% endblock %}
+{% block page_sub %}A permanent record of important actions: who did what, whether it was allowed, and the result. Records cannot be edited or deleted.{% endblock %}
+{% block content %}
+<form method="get" class="toolbar">
+  <div class="search grow">{{ ic('search') }}<input type="search" name="action" value="{{ args.action }}" placeholder="Action starts with… (e.g. login, tool:, decide_approval)" aria-label="Action"></div>
+  <select name="decision" aria-label="Decision" style="width:auto"><option value="">Any decision</option>{% for d in ['allowed','denied','pending','approved','rejected','error'] %}<option value="{{ d }}" {{ 'selected' if args.decision == d }}>{{ d|capitalize }}</option>{% endfor %}</select>
+  <select name="actor_role" aria-label="Actor" style="width:auto"><option value="">Any actor</option>{% for d in ['student','admin','anonymous'] %}<option value="{{ d }}" {{ 'selected' if args.actor_role == d }}>{{ d|capitalize }}</option>{% endfor %}</select>
+  <button class="btn" type="submit">Filter</button><a class="btn secondary" href="{{ url_for('admin.logs_page') }}">Clear</a>
+</form>
+{% include "_audit_table.html" %}
+{% endblock %}

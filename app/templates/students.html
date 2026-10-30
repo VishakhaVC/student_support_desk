@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Students · Student Support AI{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block page_sub %}{{ counts.active }} active · {{ counts.inactive }} inactive{% endblock %}
+{% block page_actions %}<a class="btn" href="{{ url_for('admin.student_new') }}">{{ ic('plus') }}Add student</a>{% endblock %}
+{% block content %}
+<form class="toolbar" method="get">
+  <div class="search grow">{{ ic('search') }}<input type="search" name="q" value="{{ q }}" placeholder="Search name, ID, email or programme" data-table-filter="#st" aria-label="Search students"></div>
+  <select name="status" aria-label="Status" onchange="this.form.submit()" style="width:auto"><option value="">Active and inactive</option>
+    {% for s in ['active','inactive','removed'] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}</select>
+  <select name="programme" aria-label="Programme" onchange="this.form.submit()" style="width:auto;max-width:260px"><option value="">All programmes</option>
+    {% for p in programmes %}<option {{ 'selected' if programme == p }}>{{ p }}</option>{% endfor %}</select>
+  <button class="btn secondary" type="submit">Apply</button>
+</form>
+{% if rows %}
+<div class="tablewrap"><table id="st"><thead><tr><th>Student</th><th>Programme</th><th>Trimester</th><th>Account</th><th>Status</th></tr></thead><tbody>
+{% for s in rows %}<tr class="clickable" data-href="{{ url_for('admin.student_detail', student_id=s.student_id) }}" data-search="{{ (s.full_name ~ ' ' ~ s.student_id ~ ' ' ~ s.email ~ ' ' ~ s.programme)|lower }}">
+  <td><a href="{{ url_for('admin.student_detail', student_id=s.student_id) }}"><b>{{ s.full_name }}</b></a><div class="note">{{ s.student_id }} · {{ s.email }}</div></td>
+  <td>{{ s.programme }}</td><td>{{ s.trimester }}</td><td>{{ accounts[s.student_id].username if accounts[s.student_id] else '—' }}</td><td>{{ badge(s.status) }}</td></tr>{% endfor %}
+</tbody></table></div><div id="st-none" class="empty" hidden>No students match your search.</div>
+{% else %}<div class="card">{{ empty('users', 'No students found', 'Try different filters, or add a student.') }}</div>{% endif %}
+{% endblock %}

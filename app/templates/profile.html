@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge %}
+{% block title %}My Profile · Student Support AI{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_sub %}Your registered details and assistant preferences.{% endblock %}
+{% block content %}
+<div class="grid g2">
+  <section class="card"><h2>Registered details</h2>
+    <dl class="kv"><dt>Full name</dt><dd>{{ profile.full_name }}{% if pending.full_name %} <span class="badge b-warn">change pending · {{ pending.full_name.approval_ref }}</span>{% endif %}</dd><dt>Student ID</dt><dd>{{ profile.student_id }}</dd><dt>Programme</dt><dd>{{ profile.programme }}</dd>
+      <dt>Trimester</dt><dd>{{ profile.trimester }}</dd><dt>CGPA</dt><dd class="num">{{ '%.2f'|format(profile.cgpa) }}</dd>
+      <dt>Email</dt><dd>{{ profile.email }}{% if pending.email %} <span class="badge b-warn">change pending · {{ pending.email.approval_ref }}</span>{% endif %}</dd>
+      <dt>Phone</dt><dd>{{ profile.phone }}{% if pending.phone %} <span class="badge b-warn">change pending · {{ pending.phone.approval_ref }}</span>{% endif %}</dd></dl>
+    <h3 style="margin-top:20px">Request a profile change</h3>
+    <p class="note" style="margin-top:-4px">Staff approve changes before they take effect.</p>
+    <form method="post" action="{{ url_for('main.request_contact_change') }}" class="form-grid">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div><label for="cf">Detail</label><select id="cf" name="field"><option value="full_name">Registered full name</option><option value="email">Registered email</option><option value="phone">Registered phone</option></select></div>
+      <div><label for="cv">New value</label><input type="text" id="cv" name="new_value" required maxlength="120"></div>
+      <div class="full" style="margin-top:12px"><button class="btn" type="submit">Send for approval</button></div>
+    </form>
+  </section>
+  <div>
+    <section class="card"><h2>Assistant preferences</h2>
+      <p class="note" style="margin-top:-6px">The assistant remembers these between conversations. Passwords, OTPs and card details are never stored.</p>
+      <form method="post" action="{{ url_for('main.save_preferences') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="pl">Preferred language</label><select id="pl" name="preferred_language"><option value="">No preference</option>{% for l in languages %}<option {{ 'selected' if mem.get('preferred_language') == l }}>{{ l }}</option>{% endfor %}</select>
+        <label for="rs">Answer style</label><select id="rs" name="response_style"><option value="">No preference</option>{% for s in styles %}<option {{ 'selected' if mem.get('response_style') == s }}>{{ s }}</option>{% endfor %}</select>
+        <label for="pn">Preferred name</label><input type="text" id="pn" name="preferred_name" maxlength="20" value="{{ mem.get('preferred_name','') }}">
+        <p style="margin:16px 0 0"><button class="btn" type="submit">Save preferences</button></p></form>
+    </section>
+    <section class="card"><h2>Account security</h2>
+      <p class="note">Change your password securely. Your current password is required.</p>
+      <form method="post" action="{{ url_for('main.change_password') }}" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+        <label for="new_password">New password</label><input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="10" required>
+        <label for="confirm_password">Confirm new password</label><input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="10" required>
+        <p class="note">Use 10+ characters, with uppercase, lowercase, number and symbol.</p>
+        <button class="btn" type="submit">Update password</button>
+      </form>
+    </section>
+    <section class="card" id="fees"><h2>Fees</h2>
+      {% if fee %}<dl class="kv"><dt>Term</dt><dd>{{ fee.term }}</dd><dt>Total</dt><dd class="num">INR {{ '{:,}'.format(fee.total_fee) }}</dd><dt>Paid</dt><dd class="num">INR {{ '{:,}'.format(fee.paid) }}</dd>
+        <dt>Outstanding</dt><dd class="num"><b>INR {{ '{:,}'.format(fee.outstanding) }}</b></dd><dt>Due date</dt><dd>{{ fee.due_date }}</dd><dt>Status</dt><dd>{{ badge(fee.status) }}</dd></dl>
+      {% else %}<p class="muted">No fee record.</p>{% endif %}
+    </section>
+    <section class="card" id="scholarship"><h2>Scholarship</h2>
+      {% if scholarship %}<dl class="kv"><dt>Scholarship</dt><dd>{{ scholarship.name }}</dd><dt>Reduction</dt><dd>{{ scholarship.percent }}% of tuition</dd><dt>Status</dt><dd>{{ badge(scholarship.status) }}</dd>
+        <dt>Condition</dt><dd>{{ scholarship.condition }}</dd><dt>Next review</dt><dd>{{ scholarship.next_review }}</dd></dl>
+      {% else %}<p class="muted">No scholarship on record.</p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

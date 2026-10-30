@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}AI Performance · Student Support AI{% endblock %}
+{% block page_title %}AI Performance{% endblock %}
+{% block page_sub %}How the assistant is performing: measured from real conversations and from scheduled evaluation runs.{% endblock %}
+{% macro n(v, suffix='') %}{% if v is none %}Not available{% else %}{{ '{:,}'.format(v|int) }}{{ suffix }}{% endif %}{% endmacro %}
+{% block content %}
+<h2>Live usage</h2>
+{% if live.queries %}
+<div class="grid g4">
+  <div class="stat"><div class="label">Queries handled</div><div class="value num">{{ live.queries }}</div><div class="hint">{{ live.errors }} ended with an error</div></div>
+  <div class="stat accent"><div class="label">Success rate</div><div class="value num">{{ '%.0f'|format(live.success_rate * 100) }}%</div><div class="hint">Runs that completed normally</div></div>
+  <div class="stat"><div class="label">Average response time</div><div class="value num">{{ '%.1f'|format(live.avg_latency_ms / 1000) }} s</div><div class="hint">End to end, per query</div></div>
+  <div class="stat"><div class="label">Tokens used</div><div class="value num">{{ n(live.total_tokens) }}</div><div class="hint">{% if live.total_tokens is none %}Not reported by the model{% else %}{{ n(live.input_tokens) }} in · {{ n(live.output_tokens) }} out{% endif %}</div></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <section class="card"><h2>Tool usage</h2>
+    {% if live.tools %}<div class="tablewrap" style="box-shadow:none"><table><thead><tr><th>Tool</th><th>Succeeded</th><th>Other outcome</th></tr></thead><tbody>
+      {% for name, t in live.tools.items() %}<tr><td>{{ name }}</td><td class="num">{{ t.ok }}</td><td class="num">{{ t.other }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<p class="muted">No tools have been used yet.</p>{% endif %}</section>
+  <section class="card"><h2>Most retrieved handbook sections</h2>
+    {% if live.evidence %}<ul class="list">{% for sec, c in live.evidence %}<li><span>{{ sec }}</span><b class="num">{{ c }}</b></li>{% endfor %}</ul>
+    {% else %}<p class="muted">No handbook lookups yet.</p>{% endif %}</section>
+</div>
+<p class="note" style="margin-top:8px">Model: {{ live.models|join(', ') }}</p>
+{% else %}<div class="card">{{ empty('chart', 'No conversations measured yet', 'Figures appear here after students use the assistant.') }}</div>{% endif %}
+
+<h2 style="margin-top:28px">Evaluation results</h2>
+<p class="note" style="margin-top:-6px">Evaluation runs replay a fixed set of questions with known correct behaviour. They are started from the command line so that model usage is never triggered by opening a page.</p>
+{% if ev.model_runs %}
+{% for r in ev.model_runs %}
+<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Evaluation run · {{ r.generated }} UTC</h2><span class="note">{{ r.model }}</span></div>
+  <div class="grid g4" style="margin-top:12px">
+    <div class="stat"><div class="label">Task success</div><div class="value num">{{ '%.0f'|format(r.accuracy * 100) }}%</div><div class="hint">{{ r.passed }} of {{ r.cases }} questions</div></div>
+    <div class="stat"><div class="label">Appropriate tool use</div><div class="value num">{{ '%.0f'|format(r.tool_rate * 100) }}%</div></div>
+    <div class="stat"><div class="label">Average latency</div><div class="value num">{{ '%.1f'|format(r.avg_latency_ms / 1000) }} s</div></div>
+    <div class="stat"><div class="label">Tokens</div><div class="value num">{{ n(r.total_tokens) }}</div><div class="hint">{% if r.total_tokens is not none %}{{ n(r.input_tokens) }} in · {{ n(r.output_tokens) }} out{% else %}Not reported{% endif %}</div></div></div>
+  {% if r.failed %}<h3 style="margin-top:16px">Failed scenarios</h3><div class="tablewrap" style="box-shadow:none"><table><thead><tr><th>ID</th><th>Question</th><th>What went wrong</th></tr></thead><tbody>
+    {% for f in r.failed %}<tr><td>{{ f.id }}</td><td>{{ f.question }}</td><td>{{ f.why }}</td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<p class="note" style="margin-top:12px">Every scenario in this run succeeded.</p>{% endif %}
+</section>{% endfor %}
+{% else %}<div class="card">{{ empty('chart', 'No model evaluation has been run yet', 'Run: python -m evaluations.runners.run_eval --label live --mode groq --suite all') }}</div>{% endif %}
+
+<h2 style="margin-top:28px">Workflow checks</h2>
+<p class="note" style="margin-top:-6px">These runs exercise the application itself (tools, retrieval, memory, permissions) without calling the language model. They confirm the application behaves correctly; they do not measure model quality, latency or token use.</p>
+{% if ev.workflow_runs %}
+<div class="tablewrap"><table><thead><tr><th>Date (UTC)</th><th>Checked</th><th>Passed</th><th>Appropriate tool use</th></tr></thead><tbody>
+{% for r in ev.workflow_runs %}<tr><td class="nowrap">{{ r.generated }}</td><td class="num">{{ r.cases }}</td><td class="num">{{ r.passed }} ({{ '%.0f'|format(r.accuracy * 100) }}%)</td><td class="num">{{ '%.0f'|format(r.tool_rate * 100) }}%</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<p class="muted">No workflow checks recorded.</p>{% endif %}
+
+<h2 style="margin-top:28px">Security Checks</h2>
+<p class="note" style="margin-top:-6px">Attempts to read another student's data, bypass approval, misuse tools or store secrets, and whether each was stopped.</p>
+{% for s in ev.security %}
+<section class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>Security checks · {{ s.generated }} UTC</b><span><span class="badge {{ 'b-ok' if s.passed == s.total else 'b-bad' }}">{{ s.passed }} of {{ s.total }} stopped or allowed as intended</span> <span class="note">{% if not s.model_called %}Run without model calls{% else %}Run with the live model{% endif %}</span></div>
+  <div class="tablewrap" style="box-shadow:none;margin-top:12px"><table><thead><tr><th>Check</th><th>Expected</th><th>Observed</th><th>Result</th></tr></thead><tbody>
+  {% for r in s.records %}<tr><td>{{ r.scenario }}</td><td>{{ r.expected }}</td><td>{{ r.observed }}</td><td><span class="badge {{ 'b-ok' if r.passed else 'b-bad' }}">{{ 'Pass' if r.passed else 'Fail' }}</span></td></tr>{% endfor %}</tbody></table></div></section>
+{% else %}<p class="muted">No security checks recorded.</p>{% endfor %}
+
+<h2 style="margin-top:28px">Recent agent runs</h2>
+{% if runs %}
+<div class="tablewrap"><table><thead><tr><th>Run</th><th>Time (UTC)</th><th>Outcome</th><th>Tools</th><th>Latency</th><th>Tokens (in / out)</th><th></th></tr></thead><tbody>
+{% for r in runs %}<tr><td>#{{ r.id }}</td><td class="num nowrap">{{ r.created_at.strftime('%d %b %H:%M:%S') }}</td><td>{{ badge(r.status) }}</td><td>{{ r.tool_executions|map(attribute='tool_name')|join(', ') or 'answered directly' }}</td>
+  <td class="num">{{ '%.1f'|format(r.latency_ms / 1000) }} s</td><td class="num">{% if r.total_tokens is not none %}{{ r.input_tokens }} / {{ r.output_tokens }}{% else %}Not available{% endif %}</td>
+  <td><a href="{{ url_for('admin.run_detail', run_id=r.id) }}">Details</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="card">{{ empty('list', 'No runs yet', 'Each assistant request is recorded here with its tools, timing and tokens.') }}</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Dashboard · Student Support AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_sub %}Live overview of students, requests and approvals.{% endblock %}
+{% block page_actions %}<a class="btn" href="{{ url_for('admin.student_new') }}">{{ ic('plus') }}Add student</a>{% endblock %}
+{% block content %}
+<div class="grid g4">
+  <a class="stat accent" href="{{ url_for('admin.students_page', status='active') }}"><div class="label">{{ ic('users') }}Active students</div><div class="value num">{{ students.active }}</div><div class="hint">{{ students.inactive }} inactive</div></a>
+  <a class="stat" href="{{ url_for('admin.tickets_page', status='active') }}"><div class="label">{{ ic('inbox') }}Open support requests</div><div class="value num">{{ tc.open }}</div><div class="hint">{{ tc.by_status.get('Open', 0) }} new · {{ tc.by_status.get('Under Review', 0) }} in review</div></a>
+  <a class="stat" href="{{ url_for('admin.approvals_page', status='pending') }}"><div class="label">{{ ic('check') }}Pending approvals</div><div class="value num">{{ pending_total }}</div><div class="hint">{{ 'Needs your decision' if pending_total else 'All clear' }}</div></a>
+  <a class="stat" href="{{ url_for('admin.tickets_page', status='Resolved') }}"><div class="label">{{ ic('award') }}Resolved requests</div><div class="value num">{{ tc.resolved }}</div><div class="hint">{{ tc.total }} requests in total</div></a>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <section class="card"><h2>Awaiting action</h2>
+    {% if open_tickets %}<ul class="list">{% for t in open_tickets %}<li><div><a href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}"><b>{{ t.ticket_ref }}</b> · {{ t.subject }}</a><div class="note">{{ t.student_id }} · {{ t.created_at.strftime('%d %b') }}</div></div>{{ badge(t.status) }}</li>{% endfor %}</ul>
+    <p style="margin:10px 0 0"><a href="{{ url_for('admin.tickets_page', status='active') }}">Open support requests</a></p>
+    {% else %}{{ empty('inbox', 'No open requests', 'New student concerns will appear here.') }}{% endif %}</section>
+  <section class="card"><h2>Pending approvals</h2>
+    {% if pending %}<ul class="list">{% for a in pending %}<li><div><b>{{ a.approval_ref }}</b> · {{ a.student_id }}<div class="note">Change registered {{ a.field }}</div></div><a class="btn small" href="{{ url_for('admin.approvals_page') }}">Review</a></li>{% endfor %}</ul>
+    {% else %}{{ empty('check', 'Nothing to approve', 'Sensitive change requests will appear here.') }}{% endif %}</section>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <section class="card"><h2>Recent support activity</h2>
+    {% if events %}<ul class="list">{% for e, t in events %}<li><a href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}">{{ t.ticket_ref }} ·
+      {{ {'created':'raised','status_changed':'moved to ' ~ (e.to_status or ''),'response':'response added','student_reply':'student replied'}[e.event_type] }}</a><span class="note nowrap">{{ e.created_at.strftime('%d %b %H:%M') }}</span></li>{% endfor %}</ul>
+    {% else %}{{ empty('clock', 'No activity yet', '') }}{% endif %}</section>
+  <section class="card"><h2>Recent approvals</h2>
+    {% if decided %}<ul class="list">{% for a in decided %}<li><div><b>{{ a.approval_ref }}</b> · {{ a.student_id }}<div class="note">{{ a.field }} · {{ a.decided_at.strftime('%d %b %H:%M') if a.decided_at }}</div></div>{{ badge(a.status) }}</li>{% endfor %}</ul>
+    {% else %}{{ empty('check', 'No decisions yet', '') }}{% endif %}</section>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic %}
+{% block title %}AI Assistant · Student Support AI{% endblock %}
+{% block page_title %}AI Assistant{% endblock %}
+{% block page_sub %}Ask anything, explore ideas, or get secure help with your student account. Never share passwords or OTPs.{% endblock %}
+{% block content %}
+<div class="assistant">
+  <section class="card chat" aria-label="Conversation">
+    <div class="chat-intro"><span class="chat-intro-icon">✦</span><div><strong>Your AI study & support companion</strong><span>General questions, campus policies and secure account help — all in one conversation.</span></div></div>
+    <div class="chat-head"><b id="chat-title">New conversation</b>
+      <div style="display:flex;gap:6px"><button class="btn ghost small" id="clear-chat" type="button" title="Delete this conversation">{{ ic('trash') }}Clear</button></div></div>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="chat-suggestions" aria-label="Suggested questions"><span class="quick-label">TRY ASKING</span>{% for s in suggestions %}<button class="suggest" type="button" data-q="{{ s }}">{{ s }}</button>{% endfor %}</div>
+    <div class="composer">
+      <textarea id="input" rows="1" maxlength="1000" placeholder="Type your question…" aria-label="Your question"></textarea>
+      <button class="btn" id="send" type="button">Send</button>
+    </div>
+  </section>
+  <aside class="assistant-rail">
+    <div class="card metrics-panel"><div class="panel-heading"><div><span class="eyebrow">AGENT ACTIVITY</span><h2>Latest response</h2></div><span class="live-indicator" aria-label="Measured values">●</span></div>
+      <div class="metric-grid">
+        <div class="metric-tile"><span>Latency</span><strong id="m-latency">—</strong></div>
+        <div class="metric-tile"><span>Model calls</span><strong id="m-calls">—</strong></div>
+        <div class="metric-tile"><span>Tool calls</span><strong id="m-tools">—</strong></div>
+        <div class="metric-tile"><span>Input tokens</span><strong id="m-input">—</strong></div>
+        <div class="metric-tile"><span>Output tokens</span><strong id="m-output">—</strong></div>
+        <div class="metric-tile"><span>Total tokens</span><strong id="m-total">—</strong></div>
+      </div>
+      <div class="model-used"><span>Model used</span><strong id="m-model">No response yet</strong></div>
+      <p class="note" id="m-note">Metrics appear after an AI response and update when you open a past conversation.</p>
+    </div>
+    <div class="card conversation-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">Conversations</h2><button class="btn secondary small" id="new-chat" type="button">{{ ic('plus') }}New</button></div>
+      <div class="convlist" id="convlist"><div class="skeleton"></div><div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:65%"></div></div>
+      <p style="margin:10px 0 0"><button class="btn ghost small" id="clear-all" type="button">Delete all conversations</button></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='chat.js') }}"></script>{% endblock %}

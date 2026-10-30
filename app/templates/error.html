@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty %}
+{% block title %}{{ title }} · Student Support AI{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card">{{ empty('inbox', code ~ ' · ' ~ title, text) }}<p style="text-align:center"><a class="btn secondary" href="{{ url_for('main.index') }}">Back to home</a></p></div>
+{% endblock %}
+{% block public %}
+<div class="auth"><div class="auth-card card" style="text-align:center"><h1>{{ code }} · {{ title }}</h1><p class="muted">{{ text }}</p><a class="btn secondary" href="{{ url_for('auth.login') }}">Go to sign in</a></div></div>
+{% endblock %}

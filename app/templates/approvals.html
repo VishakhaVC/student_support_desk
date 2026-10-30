@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Approvals · Student Support AI{% endblock %}
+{% block page_title %}Approvals{% endblock %}
+{% block page_sub %}Changes to your registered details are applied only after a staff member approves them.{% endblock %}
+{% block page_actions %}<button type="button" class="btn secondary" id="request-change-open">{{ ic('plus') }}Request a change</button>{% endblock %}
+{% block content %}
+{% if items %}
+<div class="tablewrap"><table><thead><tr><th>Reference</th><th>Requested change</th><th>Requested</th><th>Status</th><th>Outcome</th><th>Administrator remarks</th></tr></thead><tbody>
+{% for a in items %}<tr>
+  <td><b>{{ a.approval_ref }}</b>{% if a.ticket_id and ticket_refs.get(a.ticket_id) %}<div class="note"><a href="{{ url_for('main.ticket_detail', ref=ticket_refs[a.ticket_id]) }}">{{ ticket_refs[a.ticket_id] }}</a></div>{% endif %}</td>
+  <td>Update registered {{ a.field }}<div class="note">to <code>{{ a.new_value }}</code></div></td>
+  <td class="num nowrap">{{ a.created_at.strftime('%d %b %Y, %H:%M') }}</td><td>{{ badge(a.status) }}</td>
+  <td>{% if a.status == 'pending' %}Waiting for staff review{% else %}{{ a.execution_result or ('Applied' if a.executed_at else 'Not applied') }}{% if a.decided_at %}<div class="note">{{ a.decided_at.strftime('%d %b %Y, %H:%M') }}</div>{% endif %}{% endif %}</td>
+  <td>{{ a.decision_note or '—' }}</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}<div class="card">{{ empty('check', 'No approval requests', 'No changes are awaiting review. Use ‘Request a change’ to submit your registered name, email or phone number for approval. Ordinary support tickets are listed separately.') }}</div>{% endif %}
+<dialog id="approval-request-dialog"><form method="post" class="dlg" action="{{ url_for('main.request_contact_change') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Request a registered detail change</h2><p class="note">Your existing details remain unchanged while staff review the request.</p>
+  <label for="request-field">Change</label><select name="field" id="request-field" required>
+    <option value="full_name">Registered full name</option><option value="email">Registered email</option><option value="phone">Registered phone</option>
+  </select>
+  <label for="request-value">New value</label><input name="new_value" id="request-value" type="text" maxlength="120" required>
+  <div class="dlg-actions"><button type="button" class="btn secondary" id="request-change-cancel">Cancel</button><button class="btn" type="submit">Submit for approval</button></div>
+</form></dialog>
+{% endblock %}
+
+{% block scripts %}<script>
+(() => { const d = document.getElementById('approval-request-dialog');
+ document.getElementById('request-change-open').addEventListener('click', () => d.showModal());
+ document.getElementById('request-change-cancel').addEventListener('click', () => d.close()); })();
+</script>{% endblock %}

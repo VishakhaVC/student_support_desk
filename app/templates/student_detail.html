@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}{{ profile.full_name }} · Student Support AI{% endblock %}
+{% block page_title %}{{ profile.full_name }}{% endblock %}
+{% block page_sub %}<a href="{{ url_for('admin.students_page') }}">← All students</a> · {{ profile.student_id }} · {{ badge(profile.status) }}{% endblock %}
+{% block content %}
+{% if one_time_password %}
+<div class="card" style="border-color:var(--warn)"><h2>{{ one_time_note }} Copy the password now</h2>
+  <p class="note" style="margin-top:-6px">It is shown only once and is stored only as a secure hash. Share it with the student through a private channel.</p>
+  <div class="secret"><span>{{ one_time_password }}</span>{% if one_time_password[0] != '(' %}<button class="btn secondary small" type="button" data-copy="{{ one_time_password }}">{{ ic('copy') }}Copy</button>{% endif %}</div></div>
+{% endif %}
+<div class="grid g21" {% if one_time_password %}style="margin-top:16px"{% endif %}>
+  <div>
+    <form class="card" method="post" action="{{ url_for('admin.student_edit', student_id=profile.student_id) }}" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2>Student details</h2>
+      <div class="form-grid">
+        <div><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" value="{{ profile.full_name }}" maxlength="80" required></div>
+        <div><label>Student ID</label><input type="text" value="{{ profile.student_id }}" disabled></div>
+        <div><label for="email">Email</label><input type="email" id="email" name="email" value="{{ profile.email }}" maxlength="120" required></div>
+        <div><label for="phone">Phone</label><input type="text" id="phone" name="phone" value="{{ profile.phone }}" maxlength="30" required></div>
+        <div><label for="programme">Programme</label><input type="text" id="programme" name="programme" value="{{ profile.programme }}" maxlength="120" required></div>
+        <div><label for="trimester">Trimester</label><select id="trimester" name="trimester">{% for t in trimesters %}<option {{ 'selected' if profile.trimester == t }}>{{ t }}</option>{% endfor %}</select></div>
+        <div><label for="cgpa">CGPA</label><input type="number" step="0.01" min="0" max="4" id="cgpa" name="cgpa" value="{{ '%.2f'|format(profile.cgpa) }}" required></div>
+      </div>
+      <p style="margin:18px 0 0"><button class="btn" type="submit">Save changes</button></p>
+    </form>
+    <section class="card"><h2>Support requests ({{ tickets|length }})</h2>
+      {% if tickets %}<ul class="list">{% for t in tickets %}<li><a href="{{ url_for('admin.ticket_detail', ref=t.ticket_ref) }}"><b>{{ t.ticket_ref }}</b> · {{ t.subject }}</a>{{ badge(t.status) }}</li>{% endfor %}</ul>{% else %}<p class="muted">No requests.</p>{% endif %}
+      <h2 style="margin-top:20px">Approval requests ({{ approvals|length }})</h2>
+      {% if approvals %}<ul class="list">{% for a in approvals %}<li><span><b>{{ a.approval_ref }}</b> · {{ a.field }} → <code>{{ a.new_value }}</code></span>{{ badge(a.status) }}</li>{% endfor %}</ul>{% else %}<p class="muted">No approval requests.</p>{% endif %}
+    </section>
+  </div>
+  <div>
+    <section class="card"><h2>Account</h2>
+      <dl class="kv" style="grid-template-columns:100px 1fr"><dt>Username</dt><dd>{{ account.username if account else '—' }}</dd><dt>Status</dt><dd>{{ badge(profile.status) }}</dd><dt>Created</dt><dd>{{ profile.created_at.strftime('%d %b %Y') if profile.created_at else '—' }}</dd></dl>
+      <div style="display:grid;gap:8px;margin-top:16px">
+        {% if profile.status == 'active' %}
+        <form method="post" action="{{ url_for('admin.student_status', student_id=profile.student_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="inactive">
+          <button class="btn secondary" style="width:100%" data-confirm-title="Deactivate account?" data-confirm="{{ profile.full_name }} will be signed out and will not be able to sign in. Records are kept." data-confirm-label="Deactivate" data-danger="1" type="submit">Deactivate account</button></form>
+        {% elif profile.status == 'inactive' %}
+        <form method="post" action="{{ url_for('admin.student_status', student_id=profile.student_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="active"><button class="btn" style="width:100%" type="submit">Reactivate account</button></form>
+        {% else %}
+        <form method="post" action="{{ url_for('admin.student_status', student_id=profile.student_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="active"><button class="btn" style="width:100%" type="submit">Restore student</button></form>
+        {% endif %}
+        {% if profile.status != 'removed' %}
+        <form method="post" action="{{ url_for('admin.student_status', student_id=profile.student_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="status" value="removed">
+          <button class="btn danger" style="width:100%" data-confirm-title="Remove student?" data-confirm="{{ profile.full_name }} will be removed from the student list and cannot sign in. The record stays in the audit history." data-confirm-label="Remove student" data-danger="1" type="submit">Remove student</button></form>{% endif %}
+        {% if account %}
+        <form method="post" action="{{ url_for('admin.student_reset_password', student_id=profile.student_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn secondary" style="width:100%" data-confirm-title="Reset password?" data-confirm="A new secure password will be generated and shown once. The old password stops working immediately." data-confirm-label="Reset password" type="submit">Reset password</button></form>{% endif %}
+      </div></section>
+    <section class="card"><h2>Fees</h2>
+      {% if fee %}<dl class="kv" style="grid-template-columns:100px 1fr"><dt>Term</dt><dd>{{ fee.term }}</dd><dt>Total</dt><dd class="num">INR {{ '{:,}'.format(fee.total_fee) }}</dd><dt>Paid</dt><dd class="num">INR {{ '{:,}'.format(fee.paid) }}</dd>
+        <dt>Outstanding</dt><dd class="num"><b>INR {{ '{:,}'.format(fee.outstanding) }}</b></dd><dt>Status</dt><dd>{{ badge(fee.status) }}</dd></dl>{% else %}<p class="muted">No fee record.</p>{% endif %}
+      <h2 style="margin-top:18px">Scholarship</h2>
+      {% if scholarship %}<dl class="kv" style="grid-template-columns:100px 1fr"><dt>Name</dt><dd>{{ scholarship.name }}</dd><dt>Reduction</dt><dd>{{ scholarship.percent }}%</dd><dt>Status</dt><dd>{{ badge(scholarship.status) }}</dd></dl>{% else %}<p class="muted">None on record.</p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

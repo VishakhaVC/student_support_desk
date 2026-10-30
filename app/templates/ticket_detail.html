@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge %}
+{% block title %}{{ t.ticket_ref }} · Student Support AI{% endblock %}
+{% block page_title %}{{ t.ticket_ref }} · {{ t.subject }}{% endblock %}
+{% block page_sub %}<a href="{{ url_for('main.tickets_page') }}">← All requests</a>{% endblock %}
+{% block page_actions %}{{ badge(t.status) }}{% endblock %}
+{% block content %}
+<div class="grid g21">
+  <div>
+    <section class="card"><h2>Your request</h2>
+      <p style="white-space:pre-wrap;margin:0">{{ t.description }}</p>
+      {% if t.last_response %}<h3 style="margin-top:18px">Latest response from administration</h3><div class="bubble-note">{{ t.last_response }}</div>{% endif %}
+      {% if t.status == 'Resolved' %}<p class="note" style="margin-top:12px">Resolved {{ t.resolved_at.strftime('%d %b %Y, %H:%M') if t.resolved_at }}.</p>{% endif %}
+    </section>
+    <section class="card"><h2>History</h2>
+      <ul class="timeline">{% for e in events %}<li>
+        <div class="who">{{ {'created':'Request created','status_changed':'Status changed','response':'Administration replied','student_reply':'You replied'}[e.event_type] }}
+          {% if e.to_status and e.event_type in ('status_changed','created') %} · {{ badge(e.to_status) }}{% endif %}</div>
+        <div class="when">{{ e.created_at.strftime('%d %b %Y, %H:%M') }}{% if e.event_type == 'status_changed' and e.from_status %} · from {{ e.from_status }}{% endif %}</div>
+        {% if e.note and e.event_type != 'created' %}<p>{{ e.note }}</p>{% endif %}</li>{% endfor %}</ul>
+    </section>
+  </div>
+  <div>
+    <section class="card"><h2>Details</h2>
+      <dl class="kv" style="grid-template-columns:100px 1fr"><dt>Reference</dt><dd>{{ t.ticket_ref }}</dd><dt>Category</dt><dd>{{ t.category.replace('_',' ')|capitalize }}</dd>
+        <dt>Created</dt><dd class="num">{{ t.created_at.strftime('%d %b %Y, %H:%M') }}</dd><dt>Updated</dt><dd class="num">{{ t.updated_at.strftime('%d %b %Y, %H:%M') }}</dd>
+        <dt>Raised via</dt><dd>{{ 'AI Assistant' if t.source == 'assistant' else 'Support form' }}</dd></dl>
+      {% if linked %}<p style="margin:14px 0 0"><a href="{{ url_for('main.my_approvals') }}">Linked approval {{ linked.approval_ref }}</a> · {{ badge(linked.status) }}</p>{% endif %}
+    </section>
+    {% if not linked and t.status in active %}
+    <section class="card profile-request-panel"><h2>Does this concern need a profile change?</h2>
+      <p class="note">A support ticket alone does not authorize changes to your registered information. Submit the exact new value here to send a linked request to the administrator's Approvals queue.</p>
+      <form method="post" action="{{ url_for('main.ticket_request_change', ref=t.ticket_ref) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="approval-field">Detail to change</label><select id="approval-field" name="field" required><option value="full_name">Full name</option><option value="email">Email</option><option value="phone">Phone</option></select>
+        <label for="approval-value">Requested new value</label><input type="text" id="approval-value" name="new_value" maxlength="120" required>
+        <button class="btn" type="submit" style="margin-top:12px">Send for approval</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if t.status in active %}
+    <section class="card"><h2>{{ 'Reply to administration' if t.status == 'Awaiting Student' else 'Add information' }}</h2>
+      {% if t.status == 'Awaiting Student' %}<p class="note">Administration is waiting for your answer.</p>{% endif %}
+      <form method="post" action="{{ url_for('main.ticket_reply', ref=t.ticket_ref) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="message" maxlength="1000" required style="min-height:80px"></textarea><p style="margin:10px 0 0"><button class="btn" type="submit">Send reply</button></p></form>
+    </section>{% endif %}
+  </div>
+</div>
+{% endblock %}

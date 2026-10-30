@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge, empty %}
+{% block title %}Dashboard · Student Support AI{% endblock %}
+{% block page_title %}Welcome, {{ profile.full_name.split(' ')[0] }}{% endblock %}
+{% block page_sub %}{{ profile.programme }} · {{ profile.trimester }} · {{ profile.student_id }}{% endblock %}
+{% block page_actions %}<a class="btn" href="{{ url_for('main.assistant') }}">{{ ic('chat') }}Ask the assistant</a>{% endblock %}
+{% block content %}
+<div class="grid g4">
+  <a class="stat accent" href="{{ url_for('main.profile') }}#fees"><div class="label">{{ ic('money') }}Outstanding balance</div>
+    <div class="value num">{% if fee %}INR {{ '{:,}'.format(fee.outstanding) }}{% else %}Not available{% endif %}</div>
+    <div class="hint">{% if fee %}{{ fee.status }} · due {{ fee.due_date }}{% else %}No fee record{% endif %}</div></a>
+  <a class="stat" href="{{ url_for('main.profile') }}#scholarship"><div class="label">{{ ic('award') }}Scholarship</div>
+    <div class="value" style="font-size:1.15rem;margin-top:8px">{% if scholarship %}{{ scholarship.percent }}% · {{ scholarship.status }}{% else %}None{% endif %}</div>
+    <div class="hint">{{ scholarship.name if scholarship else 'No scholarship on record' }}</div></a>
+  <a class="stat" href="{{ url_for('main.tickets_page', status='active') }}"><div class="label">{{ ic('inbox') }}Open support requests</div><div class="value num">{{ counts.open }}</div>
+    <div class="hint">{{ counts.resolved }} resolved · {{ counts.total }} in total</div></a>
+  <a class="stat" href="{{ url_for('main.my_approvals') }}"><div class="label">{{ ic('check') }}Pending approvals</div><div class="value num">{{ pending }}</div>
+    <div class="hint">{{ 'Waiting for staff review' if pending else 'Nothing waiting' }}</div></a>
+</div>
+<div class="grid g21" style="margin-top:16px">
+  <section class="card">
+    <h2>Recent support requests</h2>
+    {% if recent %}
+    <ul class="list">{% for t in recent %}
+      <li><div><a href="{{ url_for('main.ticket_detail', ref=t.ticket_ref) }}"><b>{{ t.ticket_ref }}</b> · {{ t.subject }}</a>
+        {% if t.last_response %}<div class="note">Reply: {{ t.last_response[:90] }}{{ '…' if t.last_response|length > 90 }}</div>{% endif %}</div>{{ badge(t.status) }}</li>{% endfor %}</ul>
+    <p style="margin:10px 0 0"><a href="{{ url_for('main.tickets_page') }}">View all requests</a></p>
+    {% else %}{{ empty('inbox', 'No support requests yet', 'Raise a request or ask the assistant to do it for you.') }}{% endif %}
+  </section>
+  <section class="card">
+    <h2>Recent activity</h2>
+    {% if activity %}<ul class="list">{% for a in activity %}<li><a href="{{ a.link }}">{{ a.text }}</a><span class="note nowrap">{{ a.time.strftime('%d %b') }}</span></li>{% endfor %}</ul>
+    {% else %}{{ empty('clock', 'Nothing yet', 'Your requests and approvals will appear here.') }}{% endif %}
+  </section>
+</div>
+{% endblock %}

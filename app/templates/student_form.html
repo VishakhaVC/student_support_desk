@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic %}
+{% block title %}Add student · Student Support AI{% endblock %}
+{% block page_title %}Add student{% endblock %}
+{% block page_sub %}<a href="{{ url_for('admin.students_page') }}">← All students</a>{% endblock %}
+{% macro err(k) %}{% if errors.get(k) %}<div class="field-err">{{ errors[k] }}</div>{% endif %}{% endmacro %}
+{% block content %}
+<form method="post" class="card" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>Student record</h2>
+  <div class="form-grid">
+    <div><label for="full_name">Full name</label><input type="text" id="full_name" name="full_name" value="{{ data.get('full_name','') }}" class="{{ 'invalid' if errors.full_name }}" maxlength="80" required>{{ err('full_name') }}</div>
+    <div><label for="student_id">Student ID</label><input type="text" id="student_id" name="student_id" value="{{ data.get('student_id','') }}" class="{{ 'invalid' if errors.student_id }}" maxlength="20" required>{{ err('student_id') }}</div>
+    <div><label for="email">Email</label><input type="email" id="email" name="email" value="{{ data.get('email','') }}" class="{{ 'invalid' if errors.email }}" maxlength="120" required>{{ err('email') }}</div>
+    <div><label for="phone">Phone</label><input type="text" id="phone" name="phone" value="{{ data.get('phone','') }}" class="{{ 'invalid' if errors.phone }}" maxlength="30" required>{{ err('phone') }}</div>
+    <div><label for="programme">Programme</label><input type="text" id="programme" name="programme" list="prog" value="{{ data.get('programme','') }}" class="{{ 'invalid' if errors.programme }}" maxlength="120" required>
+      <datalist id="prog">{% for p in programmes %}<option value="{{ p }}">{% endfor %}</datalist>{{ err('programme') }}</div>
+    <div><label for="trimester">Trimester</label><select id="trimester" name="trimester">{% for t in trimesters %}<option {{ 'selected' if data.get('trimester') == t }}>{{ t }}</option>{% endfor %}</select>{{ err('trimester') }}</div>
+    <div><label for="cgpa">CGPA (0 – 4.0)</label><input type="number" step="0.01" min="0" max="4" id="cgpa" name="cgpa" value="{{ data.get('cgpa','') }}" class="{{ 'invalid' if errors.cgpa }}" required>{{ err('cgpa') }}</div>
+    <div><label for="total_fee">Trimester fee (INR)</label><input type="number" min="0" id="total_fee" name="total_fee" value="{{ data.get('total_fee','450000') }}" class="{{ 'invalid' if errors.total_fee }}">{{ err('total_fee') }}</div>
+  </div>
+  <h2 style="margin-top:24px">Account</h2>
+  <div class="form-grid">
+    <div><label for="username">Username</label><input type="text" id="username" name="username" value="{{ data.get('username','') }}" class="{{ 'invalid' if errors.username }}" maxlength="30" autocomplete="off" required>{{ err('username') }}</div>
+    <div><label for="status">Account status</label><select id="status" name="status"><option value="active" {{ 'selected' if data.get('status') == 'active' }}>Active</option><option value="inactive" {{ 'selected' if data.get('status') == 'inactive' }}>Inactive</option></select></div>
+    <div class="full"><label for="password">Initial password</label><input type="password" id="password" name="password" autocomplete="new-password" class="{{ 'invalid' if errors.password }}" placeholder="Leave blank to generate a secure password">{{ err('password') }}
+      <div class="note" style="margin-top:4px">At least 10 characters with upper and lower case, a digit and a symbol. A generated password is shown once after saving.</div></div>
+  </div>
+  <p style="margin:22px 0 0;display:flex;gap:8px"><button class="btn" type="submit">Create student</button><a class="btn secondary" href="{{ url_for('admin.students_page') }}">Cancel</a></p>
+</form>
+{% endblock %}

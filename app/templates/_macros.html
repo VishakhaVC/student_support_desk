@@ -1,0 +1,5 @@
+{% macro ic(name) %}<svg class="ic" aria-hidden="true"><use href="#i-{{ name }}"/></svg>{% endmacro %}
+{% macro badge(s) %}{% set cls = {'Open':'b-info','Under Review':'b-warn','Awaiting Student':'b-warn','Resolved':'b-ok','Rejected':'b-bad','Closed':'b-plain',
+ 'pending':'b-warn','approved':'b-ok','rejected':'b-bad','active':'b-ok','inactive':'b-warn','removed':'b-bad','Paid':'b-ok','Partially paid':'b-warn','Overdue':'b-bad','Unpaid':'b-warn',
+ 'Active':'b-ok','Under review':'b-warn','completed':'b-ok','error':'b-bad','denied':'b-bad','allowed':'b-ok'}.get(s, '') %}<span class="badge {{ cls }}">{{ s }}</span>{% endmacro %}
+{% macro empty(icon, title, text) %}<div class="empty">{{ ic(icon) }}<b>{{ title }}</b>{{ text }}</div>{% endmacro %}

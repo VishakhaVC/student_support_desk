@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge %}
+{% block title %}{{ t.ticket_ref }} · Student Support AI{% endblock %}
+{% block page_title %}{{ t.ticket_ref }} · {{ t.subject }}{% endblock %}
+{% block page_sub %}<a href="{{ url_for('admin.tickets_page') }}">← All requests</a>{% endblock %}
+{% block page_actions %}{{ badge(t.status) }}{% endblock %}
+{% block content %}
+<div class="grid g21">
+  <div>
+    <section class="card"><h2>Student's concern</h2><p style="white-space:pre-wrap;margin:0">{{ t.description }}</p>
+      {% if t.last_response %}<h3 style="margin-top:18px">Latest response sent</h3><div class="bubble-note">{{ t.last_response }}</div>{% endif %}</section>
+    <section class="card"><h2>History</h2>
+      <ul class="timeline">{% for e in events %}<li>
+        <div class="who">{{ {'created':'Request raised','status_changed':'Status changed','response':'Response added','student_reply':'Student replied'}[e.event_type] }}{% if e.to_status and e.event_type in ('status_changed','created') %} · {{ badge(e.to_status) }}{% endif %}</div>
+        <div class="when">{{ e.actor_role|capitalize }} · {{ e.created_at.strftime('%d %b %Y, %H:%M') }}{% if e.event_type == 'status_changed' and e.from_status %} · from {{ e.from_status }}{% endif %}</div>
+        {% if e.note and e.event_type != 'created' %}<p>{{ e.note }}</p>{% endif %}</li>{% endfor %}</ul></section>
+  </div>
+  <div>
+    {% if not linked and t.category != 'contact_change' %}<div class="workflow-notice"><strong>Support request, not a profile approval</strong><p>Changing this ticket's status communicates your decision to the student; it does not update their name, email or password. Protected profile changes are submitted separately under Approvals.</p></div>{% endif %}
+    <section class="card"><h2>Respond</h2>
+      <form method="post" action="{{ url_for('admin.ticket_update', ref=t.ticket_ref) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="status" style="margin-top:0">Status</label>
+        <select id="status" name="status">
+          <option value="{{ t.status }}" selected>{{ t.status }} (current)</option>
+          {% for s in transitions %}<option>{{ s }}</option>{% endfor %}
+        </select>
+        <label for="note">Response to the student</label>
+        <textarea id="note" name="note" maxlength="1000" placeholder="Required when resolving, rejecting or asking the student for information."></textarea>
+        <p style="margin:14px 0 0"><button class="btn" type="submit">Save and notify student</button></p>
+      </form>
+      {% if t.status not in active %}<p class="note" style="margin-top:10px">This request is {{ t.status|lower }}. Choose “Under Review” to reopen it.</p>{% endif %}
+    </section>
+    <section class="card"><h2>Student</h2>
+      {% if student %}<dl class="kv" style="grid-template-columns:90px 1fr"><dt>Name</dt><dd><a href="{{ url_for('admin.student_detail', student_id=student.student_id) }}">{{ student.full_name }}</a></dd><dt>ID</dt><dd>{{ student.student_id }}</dd>
+        <dt>Programme</dt><dd>{{ student.programme }}</dd><dt>Category</dt><dd>{{ t.category.replace('_',' ')|capitalize }}</dd><dt>Raised</dt><dd class="num">{{ t.created_at.strftime('%d %b %Y, %H:%M') }}</dd><dt>Via</dt><dd>{{ 'AI Assistant' if t.source == 'assistant' else 'Support form' }}</dd></dl>{% endif %}
+      {% if t.category == 'account_access' %}<div class="workflow-notice"><strong>Password support</strong><p>For password issues, use the student's account recovery options. Closing this ticket does not change their password.</p><a class="btn small" href="{{ url_for('admin.student_detail', student_id=t.student_id) }}">Student account options →</a></div>{% endif %}
+      {% if linked and linked.status == 'pending' %}<div class="workflow-notice"><strong>Approval needed</strong><p>This ticket requests a protected profile change. Review it in Approvals before marking the ticket complete.</p><a class="btn small" href="{{ url_for('admin.approvals_page', status='pending') }}">Review approval {{ linked.approval_ref }} →</a></div>{% endif %}
+      {% if linked %}<p style="margin:14px 0 0">Linked approval: <a href="{{ url_for('admin.approvals_page', status='') }}">{{ linked.approval_ref }}</a> · {{ badge(linked.status) }}<br><span class="note">Change registered {{ linked.field }} to <code>{{ linked.new_value }}</code></span></p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

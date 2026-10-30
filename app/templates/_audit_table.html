@@ -1,0 +1,9 @@
+{% from "_macros.html" import badge %}
+{% set _rows = rows if rows is defined else audit_rows %}
+<div class="tablewrap"><table>
+<thead><tr><th>Time (UTC)</th><th>Actor</th><th>Action</th><th>Target</th><th>Decision</th><th>Result</th><th>Reason</th></tr></thead><tbody>
+{% for r in _rows %}
+<tr><td class="num nowrap">{{ r.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td><td>{{ r.actor_role }}{% if r.actor_user_id %} #{{ r.actor_user_id }}{% endif %}</td>
+<td>{{ r.action }}</td><td>{{ r.target_type or '' }} {{ r.target_id or '' }}</td><td>{{ badge(r.decision) }}</td><td>{{ r.result or '' }}</td><td>{{ r.reason or '' }}</td></tr>
+{% else %}<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">No records match.</td></tr>{% endfor %}
+</tbody></table></div>

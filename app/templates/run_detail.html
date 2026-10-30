@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ic, badge %}
+{% block title %}Run #{{ run.id }} · Student Support AI{% endblock %}
+{% block page_title %}Agent run #{{ run.id }}{% endblock %}
+{% block page_sub %}<a href="{{ url_for('admin.performance_page') }}">← AI Performance</a> · {{ run.created_at.strftime('%d %b %Y, %H:%M:%S') }} UTC · trace {{ run.trace_id[:12] }}{% endblock %}
+{% block content %}
+<div class="grid g4">
+  <div class="stat"><div class="label">Outcome</div><div style="margin-top:8px">{{ badge(run.status) }}</div><div class="hint">{{ run.iterations }} model call(s), {{ run.tool_call_count }} tool call(s){% if run.error_kind %} · {{ run.error_kind }}{% endif %}</div></div>
+  <div class="stat"><div class="label">Latency</div><div class="value num">{{ '%.2f'|format(run.latency_ms / 1000) }} s</div></div>
+  <div class="stat"><div class="label">Tokens</div><div class="value num">{% if run.total_tokens is not none %}{{ run.total_tokens }}{% else %}Not available{% endif %}</div><div class="hint">{% if run.total_tokens is not none %}{{ run.input_tokens }} in · {{ run.output_tokens }} out{% else %}Not reported by the model{% endif %}</div></div>
+  <div class="stat"><div class="label">Model</div><div style="margin-top:8px;word-break:break-all">{{ run.model }}</div></div>
+</div>
+<h2 style="margin-top:24px">Context given to the model</h2>
+<div class="tablewrap"><table><thead><tr><th>Source</th><th>Used</th><th>Reason</th></tr></thead><tbody>
+{% for c in context %}<tr><td>{{ c.source }}{% if c.item %}: {{ c.item }}{% endif %}</td><td>{{ 'yes' if c.selected else 'no' }}</td><td>{{ c.reason }}</td></tr>{% endfor %}</tbody></table></div>
+<h2 style="margin-top:24px">Tool calls</h2>
+{% if run.tool_executions %}<div class="tablewrap"><table><thead><tr><th>Step</th><th>Tool</th><th>Outcome</th><th>Arguments</th><th>Result</th><th>ms</th></tr></thead><tbody>
+{% for t in run.tool_executions %}<tr><td>{{ t.step }}</td><td>{{ t.tool_name }}</td><td>{{ badge(t.status) }} {{ t.error_code or '' }}</td><td><code>{{ t.arguments_json }}</code></td><td><code>{{ t.result_json[:400] }}</code></td><td class="num">{{ t.latency_ms }}</td></tr>{% endfor %}</tbody></table></div>
+{% else %}<p class="muted">No tools were needed; the assistant answered directly.</p>{% endif %}
+<h2 style="margin-top:24px">Permission and audit records for this run</h2>
+{% if audits %}{% set rows = audits %}{% include "_audit_table.html" %}{% else %}<p class="muted">No audit records: this run did not touch private data or perform an action.</p>{% endif %}
+<h2 style="margin-top:24px">Event timeline</h2>
+<div class="tablewrap"><table><thead><tr><th>t (ms)</th><th>Event</th><th>Details</th></tr></thead><tbody>
+{% for e in events %}<tr><td class="num">{{ e.t_ms }}</td><td>{{ e.type }}</td><td><code>{{ e|tojson if e.type != 'context_built' else '(see context above)' }}</code></td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

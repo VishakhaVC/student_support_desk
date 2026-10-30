@@ -1,0 +1,10 @@
+LOCAL ACCOUNTS - keep this file private. It is excluded from Git.
+
+username      role      status    password
+------------------------------------------------------------
+student_a     student   active    ?hRTQ5ErS&YJOH
+student_b     student   active    3Ls%PBQ!*9k3#8
+student_c     student   active    WN2@9IdhD92pa5
+admin         admin     active    70LY*!Du?FrF34
+
+Regenerate any time with:  python scripts/provision_accounts.py --reset-passwords

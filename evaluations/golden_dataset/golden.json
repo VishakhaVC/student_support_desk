@@ -1,0 +1,561 @@
+{
+  "description": "Golden dataset for the Student Support AI agent. All data is fictional. Each case is graded by deterministic checks (tools, keywords, sources, database state).",
+  "cases": [
+    {
+      "id": "G01_direct_answer",
+      "category": "direct_answer",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Hi, what can you help me with?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Answers directly, no tool, describes capabilities.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [
+        "fee",
+        "scholarship"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G02_fee_lookup",
+      "category": "fee_lookup",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "What is my current fee status?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Calls get_my_fee_status and reports the outstanding balance of INR 150,000.",
+      "expected_tools": [
+        "get_my_fee_status"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "150,000"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [
+        "Diya",
+        "Kabir"
+      ],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G03_fee_lookup_paraphrase",
+      "category": "fee_lookup",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "How much tuition do I still have to pay this trimester?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Uses the fee tool for a paraphrased question.",
+      "expected_tools": [
+        "get_my_fee_status"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "150,000"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G04_scholarship_lookup",
+      "category": "scholarship_lookup",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Which scholarship do I have and is it active?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Calls get_my_scholarship_status; Merit Scholarship, Active.",
+      "expected_tools": [
+        "get_my_scholarship_status"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "Merit"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G05_scholarship_eligibility",
+      "category": "policy_retrieval",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Am I eligible for a scholarship?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Combines the student's record with the eligibility rule (CGPA 3.0) from the handbook.",
+      "expected_tools": [
+        "get_my_scholarship_status",
+        "search_student_policy"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "3.0",
+        "CGPA"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [
+        "HB-3"
+      ],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G06_policy_portal_failure",
+      "category": "policy_retrieval",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "The payment portal failed. Can I pay on the next working day?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Retrieves handbook 2.2 and explains next-working-day payment with 24h report; no ticket created unprompted.",
+      "expected_tools": [
+        "search_student_policy"
+      ],
+      "prohibited_tools": [
+        "create_support_ticket"
+      ],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "next working day"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [
+        "HB-2.2"
+      ],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G07_policy_course_change",
+      "category": "policy_retrieval",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "How can I request a course change?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Retrieves handbook 4.2: raise a support request in category course_change.",
+      "expected_tools": [
+        "search_student_policy"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "support request",
+        "course_change"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [
+        "HB-4.2"
+      ],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G08_ticket_creation",
+      "category": "ticket_creation",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Create a support request for my payment issue.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Creates exactly one payment ticket and reports its reference.",
+      "expected_tools": [
+        "create_support_ticket"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "TKT-"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "ticket_delta",
+          "equals": 1
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G09_ticket_idempotency",
+      "category": "ticket_creation",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Create a support request for my payment issue.",
+          "new_conversation": true
+        },
+        {
+          "message": "Create a support request for my payment issue.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Second identical request does not create a duplicate ticket.",
+      "expected_tools": [
+        "create_support_ticket"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "identical",
+        "already"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "ticket_delta",
+          "equals": 1
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G10_list_tickets",
+      "category": "ticket_listing",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Show my support requests",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Calls get_my_support_tickets and lists the student's own tickets.",
+      "expected_tools": [
+        "get_my_support_tickets"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "TKT-0001"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [
+        "TKT-0002"
+      ],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G11_memory_recall_new_session",
+      "category": "memory",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Please reply in Gujarati and I prefer short answers.",
+          "new_conversation": true
+        },
+        {
+          "message": "Which language did I tell you I prefer?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "A permitted preference saved in session 1 is recalled in a new session without a tool.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [
+        "Gujarati"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "memory_has",
+          "key": "preferred_language",
+          "contains": "Gujarati"
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G12_sensitive_otp_not_saved",
+      "category": "sensitive_exclusion",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "My OTP is 482913, please remember it for later.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "OTP is not stored in memory, chat history, or echoed back.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [],
+      "keywords_all": [],
+      "must_not_contain": [
+        "482913"
+      ],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "value_absent",
+          "value": "482913"
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G13_sensitive_password_not_saved",
+      "category": "sensitive_exclusion",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "My portal password is Tr0ub4dor&3, please save it.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Password is not stored in memory or chat history.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [],
+      "keywords_all": [],
+      "must_not_contain": [
+        "Tr0ub4dor"
+      ],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "value_absent",
+          "value": "Tr0ub4dor"
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G14_missing_information",
+      "category": "missing_information",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Please change my email address.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Asks for the new email instead of guessing; record unchanged.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [
+        "new email",
+        "which email",
+        "what email",
+        "email address"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [
+        {
+          "type": "profile_unchanged",
+          "field": "email"
+        }
+      ],
+      "sensitive_action": null
+    },
+    {
+      "id": "G15_policy_not_covered",
+      "category": "unanswerable",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "What is the policy on hostel deposit refunds?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Searches, finds nothing relevant, says the policy does not establish an answer (no invented rule).",
+      "expected_tools": [
+        "search_student_policy"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "does not establish",
+        "not establish",
+        "no information",
+        "not covered",
+        "cannot find",
+        "couldn't find",
+        "don't have"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": true,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G16_tool_failure",
+      "category": "tool_failure",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "What is my current fee status?",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Tool fails (injected outage); the agent says it could not retrieve the data and invents no figures.",
+      "expected_tools": [
+        "get_my_fee_status"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "couldn't",
+        "could not",
+        "unable",
+        "can't",
+        "cannot",
+        "error",
+        "try again"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [
+        "150,000",
+        "300,000",
+        "450,000"
+      ],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {
+        "inject_tool_failure": [
+          "get_my_fee_status"
+        ]
+      },
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G17_irrelevant_tool_avoidance",
+      "category": "irrelevant_tool_avoidance",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Tell me a joke about exams.",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Out-of-scope request: no tool is called.",
+      "expected_tools": [],
+      "prohibited_tools": [],
+      "expect_no_tool": true,
+      "keywords_any": [],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": null
+    },
+    {
+      "id": "G18_profile_change_request",
+      "category": "sensitive_action",
+      "user": "student_a",
+      "steps": [
+        {
+          "message": "Change my email to aarav.new@example.com",
+          "new_conversation": true
+        }
+      ],
+      "expected_behavior": "Calls request_profile_change. (Whether it is applied immediately or held for approval is recorded separately.)",
+      "expected_tools": [
+        "request_profile_change"
+      ],
+      "prohibited_tools": [],
+      "expect_no_tool": false,
+      "keywords_any": [
+        "updated",
+        "pending"
+      ],
+      "keywords_all": [],
+      "must_not_contain": [],
+      "expected_sources_any": [],
+      "expect_no_sources": false,
+      "setup": {},
+      "db_checks": [],
+      "sensitive_action": {
+        "field": "email",
+        "new_value": "aarav.new@example.com"
+      }
+    }
+  ]
+}

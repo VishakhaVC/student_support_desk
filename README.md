@@ -46,7 +46,7 @@ Copy-Item .env.example .env
 python run.py
 ```
 
-Open **http://127.0.0.1:5000**. The database is initialized on the first run. Initial local account details are written to **`login.txt`**, which is excluded from Git. Student accounts can be managed through the admin portal.
+Open **http://127.0.0.1:5000**. The database is initialized on the first run. Initial local account details are written to **`login.txt`**. Student accounts can be managed through the admin portal.
 
 To verify or regenerate local account passwords:
 
